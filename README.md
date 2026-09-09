@@ -5,11 +5,14 @@ A simple C#/.NET console application that retrieves a random cat fact from the C
 ## Technologies
 
 * C#
-* .NET
+* .NET 8
 * `HttpClient`
 * `System.Text.Json`
 * Async/Await
-* Dependency Injection ready architecture
+* Dependency Injection with `Microsoft.Extensions.DependencyInjection`
+* Configuration with `Microsoft.Extensions.Configuration`
+* xUnit
+* Moq
 
 ## How it works
 
@@ -19,10 +22,17 @@ The application follows a simple separation of responsibilities:
 Program
    ↓
 ApplicationService
-   ↓
-IApiClient → Cat Fact API
-   ↓
-IFileWriter → result.txt
+   ├── IApiClient
+   │      ↓
+   │   ApiClient
+   │      ↓
+   │   Cat Fact API
+   │
+   └── IFileWriter
+          ↓
+      FileWriter
+          ↓
+       result.txt
 ```
 
 ### `ApiClient`
@@ -53,49 +63,125 @@ After several requests, `result.txt` may contain:
 
 Each request adds a new line without overwriting previously saved data.
 
+## API
+
+The application uses the Cat Fact API:
+
+`https://catfact.ninja/fact`
+
+Example response:
+
+```json
+{
+  "fact": "Jaguars are the only big cats that don't roar.",
+  "length": 46
+}
+```
+
+## Configuration
+
+Application settings are stored in `appsettings.json`:
+
+```json
+{
+  "Api": {
+    "BaseUrl": "https://catfact.ninja/"
+  },
+  "File": {
+    "ResultPath": "result.txt"
+  }
+}
+```
+
+The configuration is loaded using `Microsoft.Extensions.Configuration`.
+
+`appsettings.json` is copied to the output directory when the project is built.
+
+## Dependency Injection
+
+Dependencies are registered in `Program.cs` using `Microsoft.Extensions.DependencyInjection`.
+
+The application uses the following lifetimes:
+
+* `HttpClient` — Singleton
+* `IApiClient` / `ApiClient` — Singleton
+* `IFileWriter` / `FileWriter` — Singleton
+* `ApplicationService` — Transient
+
+This keeps dependency creation and application composition in `Program.cs`, while the individual classes depend on abstractions.
+
 ## Error handling
 
-The application handles common errors such as:
+The application has centralized exception handling in `Program.Main`.
 
-* HTTP/API errors
-* File I/O errors
-* Unexpected exceptions
+The following errors are handled separately:
 
-Errors are reported in the console.
+* `HttpRequestException` — problems with the API request
+* `IOException` — problems with file operations
+* `Exception` — unexpected errors
 
-## Running the application
+Exceptions are allowed to propagate from lower layers and are handled at the application entry point.
 
-1. Clone the repository.
-2. Open the solution in Visual Studio.
-3. Restore NuGet packages.
-4. Build the project.
-5. Run the application.
+## Unit tests
 
-The application will request a cat fact and append the result to `result.txt`.
+The project contains a separate `RecruitmentTask.Tests` project using xUnit and Moq.
+
+Currently, the main application flow is tested through `ApplicationService`.
+
+The test mocks:
+
+* `IApiClient` — to provide controlled test data without making a real HTTP request
+* `IFileWriter` — to verify that the received data is passed to the file writer without creating a real file
+
+This keeps the test independent from external services and the file system.
 
 ## Project structure
 
 ```text
-NetWise/
+/
 ├── .gitattributes
 ├── .gitignore
 ├── README.md
-└── RecruitmentTask/
-    ├── RecruitmentTask.sln
-    ├── RecruitmentTask.csproj
-    ├── Program.cs
-    ├── Client/
-    │   ├── IApiClient.cs
-    │   └── ApiClient.cs
-    ├── File/
-    │   ├── IFileWriter.cs
-    │   └── FileWriter.cs
-    ├── Model/
-    │   └── CatFact.cs
-    └── Service/
-        └── ApplicationService.cs
+│
+├── RecruitmentTask/
+│   ├── RecruitmentTask.sln
+│   ├── RecruitmentTask.csproj
+│   ├── appsettings.json
+│   ├── Program.cs
+│   │
+│   ├── Client/
+│   │   ├── IApiClient.cs
+│   │   └── ApiClient.cs
+│   │
+│   ├── File/
+│   │   ├── IFileWriter.cs
+│   │   └── FileWriter.cs
+│   │
+│   ├── Model/
+│   │   └── CatFact.cs
+│   │
+│   └── Service/
+│       └── ApplicationService.cs
+│
+└── RecruitmentTask.Tests/
+    ├── RecruitmentTask.Tests.csproj
+    └── UnitTest1.cs
 ```
 
-## API
+## Running the application
 
-The application uses the [Cat Fact API](https://catfact.ninja/) to retrieve random cat facts.
+1. Clone the repository.
+2. Open `RecruitmentTask.sln` in Visual Studio.
+3. Restore NuGet packages if necessary.
+4. Build the solution.
+5. Run the `RecruitmentTask` project.
+
+The application will retrieve a cat fact and append it to `result.txt`.
+
+## Running tests
+
+Tests can be run from Visual Studio using **Test Explorer** or with the .NET CLI:
+
+```bash
+dotnet test
+```
