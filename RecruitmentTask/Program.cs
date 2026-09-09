@@ -1,6 +1,7 @@
 ﻿using RecruitmentTask.Client;
 using RecruitmentTask.File;
 using RecruitmentTask.Service;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RecruitmentTask;
 internal class Program
@@ -11,13 +12,24 @@ internal class Program
     {
         try
         {
-            HttpClient httpClient = new()
+            ServiceCollection services = [];
+
+            //Client Api
+            services.AddSingleton<HttpClient>(_ => new HttpClient
             {
                 BaseAddress = new Uri(API_BASE_URL)
-            };
-            ApiClient apiClient = new(httpClient);
-            FileWriter fileWriter = new(RESULT_PATH);
-            ApplicationService appService = new(apiClient, fileWriter);
+            });
+            services.AddSingleton<IApiClient, ApiClient>();
+
+            //File Writer
+            services.AddSingleton<IFileWriter>(new FileWriter(RESULT_PATH));
+
+            //Application Service
+            services.AddTransient<ApplicationService>();
+
+            using ServiceProvider serviceProvider = services.BuildServiceProvider();
+            ApplicationService appService = serviceProvider.GetRequiredService<ApplicationService>();
+        
             await appService.ExecuteAsync(CancellationToken.None);
         }
         catch (HttpRequestException ex)
