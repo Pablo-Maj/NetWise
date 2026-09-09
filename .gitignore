@@ -1,0 +1,6 @@
+## Build output
+RecruitmentTask/bin/
+RecruitmentTask/obj/
+
+## Visual Studio
+.vs/
