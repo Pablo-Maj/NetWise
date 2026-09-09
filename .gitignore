@@ -1,6 +1,8 @@
 ## Build output
 RecruitmentTask/bin/
 RecruitmentTask/obj/
+RecruitmentTask.Tests/bin/
+RecruitmentTask.Tests/obj/
 
 ## Visual Studio
 .vs/
