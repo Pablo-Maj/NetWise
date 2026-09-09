@@ -2,27 +2,31 @@
 using RecruitmentTask.File;
 using RecruitmentTask.Service;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 namespace RecruitmentTask;
 internal class Program
 {
-    const string API_BASE_URL = "https://catfact.ninja/fact";
-    const string RESULT_PATH = "result.txt";
     static async Task Main(string[] args)
     {
         try
         {
+            IConfiguration configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .Build();
+
             ServiceCollection services = [];
 
             //Client Api
             services.AddSingleton<HttpClient>(_ => new HttpClient
             {
-                BaseAddress = new Uri(API_BASE_URL)
+                BaseAddress = new Uri(configuration["Api:BaseUrl"]!)
             });
             services.AddSingleton<IApiClient, ApiClient>();
 
             //File Writer
-            services.AddSingleton<IFileWriter>(new FileWriter(RESULT_PATH));
+            services.AddSingleton<IFileWriter>(new FileWriter(configuration["File:ResultPath"]!));
 
             //Application Service
             services.AddTransient<ApplicationService>();
