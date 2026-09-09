@@ -1,9 +1,8 @@
 ﻿using RecruitmentTask.Model;
 
-namespace RecruitmentTask.File
+namespace RecruitmentTask.File;
+
+public interface IFileWriter
 {
-    public interface IFileWriter
-    {
-        Task AppendAsync(CatFact data, CancellationToken cancellationToken);
-    }
+    Task AppendAsync(CatFact data, CancellationToken cancellationToken);
 }

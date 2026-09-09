@@ -1,9 +1,8 @@
 ﻿using RecruitmentTask.Model;
 
-namespace RecruitmentTask.Client
+namespace RecruitmentTask.Client;
+
+public interface IApiClient
 {
-    public interface IApiClient
-    {
-        Task<CatFact> GetDataAsync(CancellationToken cancellationToken);
-    }
+    Task<CatFact> GetDataAsync(CancellationToken cancellationToken);
 }
